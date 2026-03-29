@@ -23,20 +23,20 @@ Abrir consola y dirigirse hacia ruta donde se descargo el repositorio, posterior
 
 # 3. Ejecutar la API
 
-Dentro de la carpeta raiz del proyecto en consola ejecutar: cd InventarioApi -> dotnet run
+Dentro de la carpeta raiz del proyecto en consola ejecutar: cd InventarioApi -> dotnet run --launch-profile https
 
 La API estara disponible en:
-- Swagger UI: https://localhost:7001
-- HTTP: http://localhost:5001
+- Swagger UI: https://localhost:7001/swagger
+- HTTP: http://localhost:5001/swagger
 
 La base de datos se crea y migra automaticamente al iniciar.
 
 # 4. Ejecutar el FrontEnd
 
-Dentro de la carpeta raiz del proyecto en consola ejecutar: cd InventarioApi.Web -> dotnet run
+Dentro de la carpeta raiz del proyecto en consola ejecutar: cd InventarioApi.Web -> dotnet run --launch-profile https
 
 El frontend estara disponible en:
-- HTTPS: https://localhost:7002
+- HTTPS: https://localhost:7002/Account/Login
 - HTTP: http://localhost:5002
 
 # 5. En caso de querer iniciar todo el proyecto desde visual studio 2022 seguir los siguientes pasos:
