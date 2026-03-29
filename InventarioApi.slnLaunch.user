@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Nuevo perfil",
+    "Projects": [
+      {
+        "Path": "InventarioApi\\InventarioApi.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "InventarioApiWeb\\InventarioApiWeb.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

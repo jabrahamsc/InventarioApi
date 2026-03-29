@@ -1,0 +1,191 @@
+﻿@model RegisterSaleViewModel
+@{
+    ViewData["Title"] = "Registrar Venta";
+    var products = ViewBag.Products as List<ProductViewModel> ?? new();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="d-flex align-items-center mb-4">
+            <a href="/Ventas" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-cart-plus me-2 text-primary"></i>Registrar Venta</h4>
+                <p class="text-muted small mb-0">Agrega los productos vendidos</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <form asp-action="Register" asp-controller="Ventas" method="post" id="saleForm">
+                    <div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+
+                    <div id="linesContainer">
+                        <div class="row g-2 align-items-end mb-2 sale-line">
+                            <div class="col-7">
+                                <label class="form-label fw-semibold small text-uppercase text-muted">Producto</label>
+                                <select name="Lines[0].ProductId" class="form-select product-select" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    @foreach (var p in products)
+                                    {
+                                        var priceFormatted = p.Price.ToString("F2",
+                                        System.Globalization.CultureInfo.InvariantCulture);
+                                        <option value="@p.Id"
+                                                data-price="@priceFormatted"
+                                                disabled="@(p.CurrentStock == 0 ? "disabled" : null)">
+                                            @p.Name — $@p.Price.ToString("N2") (Stock: @p.CurrentStock)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label fw-semibold small text-uppercase text-muted">Cantidad</label>
+                                <input name="Lines[0].Quantity" type="number" min="1" value="1"
+                                       class="form-control qty-input" required />
+                            </div>
+                            <div class="col-2 text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-line" disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subtotalPreview" class="d-none mb-3">
+                        <table class="table table-sm table-bordered mt-2">
+                            <thead class="table-light">
+                                <tr><th>Producto</th><th>Qty</th><th>P.Unit</th><th>Subtotal</th></tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Total estimado:</td>
+                                    <td class="fw-bold text-success" id="totalEstimate">$0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                        <button type="button" id="addLine" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-plus-lg me-1"></i>Agregar Producto
+                        </button>
+                        <small class="text-muted">Máx. 10 líneas por venta</small>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check-lg me-1"></i>Confirmar Venta
+                        </button>
+                        <a href="/Ventas" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        products.Select(p => new { id = p.Id, name = p.Name, price = p.Price, stock = p.CurrentStock })
+    ));
+
+    let lineCount = 1;
+
+    function getLineHtml(index) {
+        let opts = '<option value="">-- Seleccionar --</option>';
+        products.forEach(p => {
+            const disabled = p.stock === 0 ? 'disabled' : '';
+            opts += `<option value="${p.id}" data-price="${p.price}" ${disabled}>
+                ${p.name} — $${p.price.toFixed(2)} (Stock: ${p.stock})</option>`;
+        });
+        return `
+        <div class="row g-2 align-items-end mb-2 sale-line">
+            <div class="col-7">
+                <select name="Lines[${index}].ProductId" class="form-select product-select" required>${opts}</select>
+            </div>
+            <div class="col-3">
+                <input name="Lines[${index}].Quantity" type="number" min="1" value="1"
+                       class="form-control qty-input" required />
+            </div>
+            <div class="col-2 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-line">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    document.getElementById('addLine').addEventListener('click', function () {
+        if (document.querySelectorAll('.sale-line').length >= 10) return;
+        document.getElementById('linesContainer').insertAdjacentHTML('beforeend', getLineHtml(lineCount++));
+        updateRemoveButtons();
+        attachListeners();
+        updatePreview();
+    });
+
+    document.getElementById('linesContainer').addEventListener('click', function (e) {
+        if (e.target.closest('.remove-line')) {
+            e.target.closest('.sale-line').remove();
+            renumberLines();
+            updateRemoveButtons();
+            updatePreview();
+        }
+    });
+
+    function renumberLines() {
+        document.querySelectorAll('.sale-line').forEach((line, i) => {
+            line.querySelector('select').name = `Lines[${i}].ProductId`;
+            line.querySelector('input').name = `Lines[${i}].Quantity`;
+        });
+        lineCount = document.querySelectorAll('.sale-line').length;
+    }
+
+    function updateRemoveButtons() {
+        const btns = document.querySelectorAll('.remove-line');
+        btns.forEach(btn => btn.disabled = btns.length === 1);
+    }
+
+    function updatePreview() {
+        let total = 0, rows = '', valid = false;
+        document.querySelectorAll('.sale-line').forEach(line => {
+            const sel = line.querySelector('select');
+            const qty = parseInt(line.querySelector('input').value) || 0;
+            const opt = sel.options[sel.selectedIndex];
+            if (!sel.value || !qty) return;
+            const price = parseFloat(opt.dataset.price) || 0;
+            const subtotal = price * qty;
+            total += subtotal;
+            valid = true;
+            rows += `<tr>
+                <td>${opt.text.split('—')[0].trim()}</td>
+                <td>${qty}</td><td>$${price.toFixed(2)}</td>
+                <td class="fw-semibold">$${subtotal.toFixed(2)}</td></tr>`;
+        });
+        const preview = document.getElementById('subtotalPreview');
+        if (valid) {
+            preview.classList.remove('d-none');
+            document.getElementById('previewBody').innerHTML = rows;
+            document.getElementById('totalEstimate').textContent = `$${total.toFixed(2)}`;
+        } else {
+            preview.classList.add('d-none');
+        }
+    }
+
+        function attachListeners() {
+        document.querySelectorAll('.product-select, .qty-input').forEach(el => {
+            el.removeEventListener('change', updatePreview);
+            el.addEventListener('change', updatePreview);
+            el.removeEventListener('input', updatePreview);
+            el.addEventListener('input', updatePreview);
+        });
+    }
+    updateRemoveButtons();
+    attachListeners();
+    updatePreview();
+</script>
+}
