@@ -64,6 +64,7 @@ Mediante el metodo post /api/auth/login se obtiene token JWT.
 Mediante el metodo post /api/auth/register se pueden registrar nuevos usuarios, esto solo funciona si el usuario que intenta ejecutar el metodo
 es administrador.
 
+Nota: Si desea ejecutar todas las pruebas desde swagger, ejecute primero el metodo post api/auth/login, copie el token que se retorna en la respuesta, una vez copiado en la parte superior del swagger de clic en Authorize y pegue el token copiado.
 
 # Productos
 
